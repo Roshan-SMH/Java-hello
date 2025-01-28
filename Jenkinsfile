@@ -38,8 +38,8 @@ node	{
             steps {
                 script {
                     // Push Docker image to ECR
-                    sh "docker tag ${Tom}:${Latest} ${Latest}"
-                    sh "docker push ${Latest}"
+                    sh "docker tag Tom:Latest Latest"
+                    sh "docker push Latest"
                 }
             }
         }
