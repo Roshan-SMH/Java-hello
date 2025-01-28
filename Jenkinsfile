@@ -29,7 +29,7 @@ pipeline {
             steps {
                 script {
                     // Build Docker image using Dockerfile
-                    sh "docker build -t roshan:latest ."
+                    sh "docker build -t roshan :latest ."
                 }
             }
         }
@@ -43,7 +43,7 @@ pipeline {
                     }
 
                     // Push the Docker image to the registry
-                    sh "docker push ${SACHIN}:latest"
+                    sh "docker push roshan:latest"
                 }
             }
         }
