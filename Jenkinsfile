@@ -20,7 +20,7 @@ pipeline {
             steps {
                 script {
                     // Run Maven build to create the JAR file
-                    sh 'mvn clean package -DskipTests'
+                    sh 'mvn clean package -DskipTests=true'
                 }
             }
         }
@@ -29,7 +29,7 @@ pipeline {
             steps {
                 script {
                     // Build Docker image using Dockerfile
-                    sh "docker build -t roshan :latest ."
+                    sh "docker build -t roshan:latest ."
                 }
             }
         }
