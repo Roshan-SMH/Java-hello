@@ -38,8 +38,8 @@ node	{
             steps {
                 script {
                     // Push Docker image to ECR
-                    sh "docker tag ${IMAGE_NAME}:${IMAGE_TAG} ${ECR_URI}:${IMAGE_TAG}"
-                    sh "docker push ${ECR_URI}:${IMAGE_TAG}"
+                    sh "docker tag ${Tom}:${Latest} ${Latest}"
+                    sh "docker push ${Latest}"
                 }
             }
         }
