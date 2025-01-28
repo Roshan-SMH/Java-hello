@@ -1,85 +1,67 @@
-node	{
-    def app
+pipeline {
+    agent any  // Runs on any available agent
 
     environment {
-        // Define environment variables
-        AWS_REGION = 'ap-south-1' // Specify your AWS region
-      //  ECR_REPOSITORY = 'dev/ecommerce_pos'  // Replace with your ECR repository name
-      //  ECR_URI = "116981781220.dkr.ecr.ap-south-1.amazonaws.com/dev/ecommerce_pos"  // ECR URI format
-        IMAGE_NAME = 'pos-billing' // Docker image name
-        IMAGE_TAG = 'latest' // Docker image tag
-     //   KUBECONFIG = '/path/to/kubeconfig' // Path to your kubeconfig for EKS
+        DOCKER_IMAGE = "my-spring-boot-app"  // Docker image name
+       // DOCKER_REGISTRY = "docker.io"        // Docker registry (can be Docker Hub or private registry)
+        IMAGE_TAG = "latest"                 // Image tag for Docker
+    //    DOCKER_CREDENTIALS = "docker-creds"  // Jenkins credentials for Docker login (configured in Jenkins)
     }
 
-    stage('Clone repository') {
-        checkout scm
-    }
-
-        stage("Package jar file with Maven"){
-                sh "mvn clean package -DskipTests"
+    stages {
+        stage('Checkout') {
+            steps {
+                // Checkout the code from the repository
+                checkout scm
+            }
         }
-	
-    stage('Build image with Docker') {
-            app = docker.build("pos-billing:${env.BUILD_NUMBER}")
-    }
 
-        stage('Login to AWS ECR') {
+        stage('Build') {
             steps {
                 script {
-                    // Login to AWS ECR using the AWS CLI
-                    sh '''
-                    aws ecr get-login-password --region ${AWS_REGION} | docker login --username AWS --password-stdin ${ECR_URI}
-                    '''
+                    // Run Maven build to create the JAR file
+                    sh 'mvn clean package -DskipTests'
                 }
             }
         }
 
-        stage('Push Docker Image to ECR') {
+        stage('Build Docker Image') {
             steps {
                 script {
-                    // Push Docker image to ECR
-                    sh "docker tag Tom:Latest Latest"
-                    sh "docker push Latest"
+                    // Build Docker image using Dockerfile
+                    sh "docker build -t sachin:latest ."
                 }
             }
         }
-   stage("Deploy to Dev?") {
-        dir('Ecommerce_POS-master/PosBilling/kubernetes') {
-		      def namespace = "dev"
 
-               def imagetag="${env.BUILD_NUMBER}"
-               deploy(namespace,imagetag)    
+        stage('Push Docker Image') {
+            steps {
+                script {
+                    // Login to Docker registry
+                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS, usernameVariable: 'DOCKER_USERNAME', passwordVariable: 'DOCKER_PASSWORD')]) {
+                        sh "docker login -u ${DOCKER_USERNAME} -p ${DOCKER_PASSWORD} ${DOCKER_REGISTRY}"
+                    }
+
+                    // Push the Docker image to the registry
+                    sh "docker push ${SACHIN}:latest"
+                }
+            }
+        }
+
+        stage('Deploy to Docker') {
+            steps {
+                script {
+                    // Deploy the Docker container (assuming the deployment environment is set up)
+                    sh "docker run -d -p 8080:8080 ${DOCKER_REGISTRY}/${DOCKER_IMAGE}:${IMAGE_TAG}"
+                }
+            }
         }
     }
 
+    post {
+        always {
+            // Clean up any Docker containers or images after the pipeline runs
+            sh "docker system prune -f"
+        }
+    }
 }
-
-def deploy(namespace,imagetag) {
-    // Create a copy for this environment
-    sh "cp deployment.yaml deployment.${namespace}.yaml"
-    sh "cp namespace.yaml namespace.${namespace}.yaml"
-    sh "cp service.yaml service.${namespace}.yaml"
-
-
-    // String replace namespaces
-    sh "sed -i.bak s/XX_NAMESPACE_XX/$namespace/g deployment.${namespace}.yaml"
-    sh "sed -i.bak s/XX_NAMESPACE_XX/$namespace/g namespace.${namespace}.yaml"
-    sh "sed -i.bak s/XX_NAMESPACE_XX/$namespace/g service.${namespace}.yaml"               
-              
-
-
-    // Create namespace
-    kubectl(namespace, "apply -f namespace.${namespace}.yaml")
-
-    // String replace the image name in the deployment and create the deployment
-    sh "sed -i.bak s/XX_IMAGETAG_XX/$imagetag/g deployment.${namespace}.yaml"
-    kubectl(namespace, "apply -f deployment.${namespace}.yaml")
-        
-    // Create service
-    kubectl(namespace, "apply -f service.${namespace}.yaml")  
- 
-}
-
-def kubectl(namespace,cmd) {
-    return sh(script: "kubectl --kubeconfig /var/lib/jenkins/config --namespace=${namespace} ${cmd}", returnStdout: true)
- }
