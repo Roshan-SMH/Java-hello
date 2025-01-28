@@ -9,4 +9,4 @@ RUN apk update && apk --no-cache add curl \
     
 ENV TZ Asia/Singapore
 EXPOSE 8080 
-ENTRYPOINT ["java","-Dspring.profiles.active=dev,docker"]
+ENTRYPOINT ["java","-Dspring.profiles.active=dev,docker","-jar","/Pos-0.0.1-SNAPSHOT.jar"]
