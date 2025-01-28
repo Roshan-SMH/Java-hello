@@ -2,7 +2,7 @@ pipeline {
     agent any  // Runs on any available agent
 
     environment {
-        DOCKER_IMAGE = "my-spring-boot-app"  // Docker image name
+        DOCKER_IMAGE = "Java-hello"  // Docker image name
        // DOCKER_REGISTRY = "docker.io"        // Docker registry (can be Docker Hub or private registry)
         IMAGE_TAG = "latest"                 // Image tag for Docker
     //    DOCKER_CREDENTIALS = "docker-creds"  // Jenkins credentials for Docker login (configured in Jenkins)
